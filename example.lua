@@ -1,6 +1,7 @@
 local cqueues = require "cqueues"
 local pgsql = require "cqueues-pgsql"
 
+-- Simple function that prints out a result object
 local function pr(res)
 	print("STATUS: ", res:status())
 	for j=1, res:nfields() do
@@ -13,6 +14,20 @@ local function pr(res)
 	end
 end
 
+
+-- Works like normal in a standard lua context:
+do
+	local conn = pgsql.connectdb()
+	if conn:status() ~= pgsql.CONNECTION_OK then
+		error(conn:errorMessage(), nil)
+	end
+
+	local res = conn:exec("SELECT * FROM sometable")
+	if not res then error(conn:errorMessage(), nil) end
+	pr(res)	
+end
+
+-- But when inside a cqueues coroutine, it's non blocking!
 local loop = cqueues.new()
 loop:wrap(function()
 	local conn = pgsql.connectdb()
