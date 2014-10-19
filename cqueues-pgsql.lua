@@ -26,33 +26,30 @@ end
 function methods:pollfd()
 	return self.conn:socket()
 end
-function methods:events()
-	return self.want_events
-end
 
 --- Override synchronous methods to yield via cqueues
 function methods:connectPoll()
 	while true do
 		local polling = self.conn:connectPoll()
 		if polling == pgsql.PGRES_POLLING_READING then
-			self.want_events = "r"
+			self.events = "r"
 		elseif polling == pgsql.PGRES_POLLING_WRITING then
-			self.want_events = "w"
+			self.events = "w"
 		else
-			self.want_events = nil
+			self.events = nil
 			return polling
 		end
 		cqueues.poll(self)
 	end	
 end
 function methods:flush()
-	self.want_events = "w"
+	self.events = "w"
 	while true do
 		local r = self.conn:flush()
 		if r == 1 then
 			cqueues.poll(self)
 		else
-			self.want_events = nil
+			self.events = nil
 			return r
 		end
 	end	
@@ -118,7 +115,7 @@ function methods:sendDescribePortal(...)
 	end
 end
 function methods:getResult()
-	self.want_events = "r"
+	self.events = "r"
 	while self.conn:isBusy() do
 		cqueues.poll(self)
 		if not self.conn:consumeInput() then
@@ -126,7 +123,7 @@ function methods:getResult()
 			return nil
 		end
 	end
-	self.want_events = nil
+	self.events = nil
 	return self.conn:getResult()
 end
 function methods:exec(...)
@@ -199,7 +196,7 @@ local function wrap(conn)
 	conn:setnonblocking(true) -- Don't care if it fails
 	return setmetatable({
 			conn = conn;
-			want_events = nil;
+			events = nil;
 		}, mt)
 end
 
