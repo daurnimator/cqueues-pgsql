@@ -22,34 +22,38 @@ function mt.__index(t,k)
 	end
 end
 
---- Cqueues api.
-function methods:pollfd()
-	return self.conn:socket()
-end
-
 --- Override synchronous methods to yield via cqueues
 function methods:connectPoll()
 	while true do
 		local polling = self.conn:connectPoll()
 		if polling == pgsql.PGRES_POLLING_READING then
-			self.events = "r"
+			cqueues.poll {
+				pollfd = self.conn:socket();
+				events = "r";
+			}
 		elseif polling == pgsql.PGRES_POLLING_WRITING then
-			self.events = "w"
+			cqueues.poll {
+				pollfd = self.conn:socket();
+				events = "w";
+			}
 		else
-			self.events = nil
 			return polling
 		end
-		cqueues.poll(self)
 	end	
 end
 function methods:flush()
-	self.events = "w"
+	local t
 	while true do
 		local r = self.conn:flush()
 		if r == 1 then
-			cqueues.poll(self)
+			if not t then
+				t = {
+					pollfd = self.conn:socket();
+					events = "w";
+				}
+			end
+			cqueues.poll(t)
 		else
-			self.events = nil
 			return r
 		end
 	end	
@@ -115,15 +119,20 @@ function methods:sendDescribePortal(...)
 	end
 end
 function methods:getResult()
-	self.events = "r"
+	local t
 	while self.conn:isBusy() do
-		cqueues.poll(self)
+		if not t then
+			t = {
+				pollfd = self.conn:socket();
+				events = "r";
+			}
+		end
+		cqueues.poll(t)
 		if not self.conn:consumeInput() then
 			-- error
 			return nil
 		end
 	end
-	self.events = nil
 	return self.conn:getResult()
 end
 function methods:exec(...)
@@ -196,7 +205,6 @@ local function wrap(conn)
 	conn:setnonblocking(true) -- Don't care if it fails
 	return setmetatable({
 			conn = conn;
-			events = nil;
 		}, mt)
 end
 
