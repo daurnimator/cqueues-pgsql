@@ -39,7 +39,7 @@ function methods:connectPoll()
 		else
 			return polling
 		end
-	end	
+	end
 end
 function methods:flush()
 	local t
@@ -56,7 +56,7 @@ function methods:flush()
 		else
 			return r
 		end
-	end	
+	end
 end
 function methods:sendQuery(...)
 	if self.conn:sendQuery(...) == 0 then
@@ -225,7 +225,7 @@ local function connectdb(...)
 			break
 		end
 	end
-	return conn	
+	return conn
 end
 
 -- Get exports ready
