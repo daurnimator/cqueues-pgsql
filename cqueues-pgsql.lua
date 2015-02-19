@@ -41,6 +41,40 @@ function methods:connectPoll()
 		end
 	end
 end
+function methods:resetPoll()
+	while true do
+		local polling = self.conn:resetPoll()
+		if polling == pgsql.PGRES_POLLING_READING then
+			cqueues.poll {
+				pollfd = self.conn:socket();
+				events = "r";
+			}
+		elseif polling == pgsql.PGRES_POLLING_WRITING then
+			cqueues.poll {
+				pollfd = self.conn:socket();
+				events = "w";
+			}
+		else
+			return polling
+		end
+	end
+end
+function methods:reset()
+	if self.conn:resetStart() == 0 then
+		return
+	end
+	while true do
+		local status = conn:status()
+		if status == pgsql.CONNECTION_OK then
+			break
+		elseif status == pgsql.CONNECTION_BAD then
+			break
+		end
+		if conn:resetPoll() ~= pgsql.PGRES_POLLING_OK then
+			break
+		end
+	end
+end
 function methods:flush()
 	local t
 	while true do
