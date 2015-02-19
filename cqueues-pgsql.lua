@@ -22,6 +22,11 @@ function mt.__index(t,k)
 	end
 end
 
+function methods:finish()
+	cqueues.cancel(self.conn:socket())
+
+	return self.conn:finish()
+end
 --- Override synchronous methods to yield via cqueues
 function methods:connectPoll()
 	while true do
@@ -60,6 +65,8 @@ function methods:resetPoll()
 	end
 end
 function methods:reset()
+	cqueues.cancel(self.conn:socket())
+
 	if self.conn:resetStart() == 0 then
 		return
 	end
