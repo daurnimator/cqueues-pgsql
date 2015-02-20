@@ -27,6 +27,10 @@ function methods:finish()
 
 	return self.conn:finish()
 end
+function mt:__gc()
+	self:finish()
+end
+
 --- Override synchronous methods to yield via cqueues
 function methods:connectPoll()
 	while true do
@@ -247,6 +251,20 @@ local function wrap(conn)
 	return setmetatable({
 			conn = conn;
 		}, mt)
+end
+if _VERSION == "Lua 5.1" then
+	-- Lua 5.1 does not respect __gc on tables
+	-- However it does have newproxy.
+	local old_wrap = wrap
+	wrap = function(...)
+		local self = old_wrap(...)
+		local gc_hook = newproxy(true)
+		getmetatable(gc_hook).__gc = function()
+			self:finish()
+		end
+		self.gc_hook = gc_hook
+		return self
+	end
 end
 
 local function connectStart(...)
