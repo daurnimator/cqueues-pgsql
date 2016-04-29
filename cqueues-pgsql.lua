@@ -294,6 +294,7 @@ local _M = {
 	libVersion = pgsql.libVersion;
 	ping = pgsql.ping;
 	encryptPassword = pgsql.encryptPassword;
+	initOpenSSL = pgsql.initOpenSSL;
 }
 
 -- Copy in constants
