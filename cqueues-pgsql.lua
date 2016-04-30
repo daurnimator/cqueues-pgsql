@@ -2,7 +2,9 @@ local pgsql = require "pgsql"
 local cqueues = require "cqueues"
 
 local methods = {}
-local mt = {}
+local mt = {
+	__name = "cqueues-pgsql connection";
+}
 -- Delegate to underlying pgsql object
 function mt.__index(t,k)
 	local v = methods[k]
