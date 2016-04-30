@@ -23,10 +23,13 @@ function mt.__index(t,k)
 end
 
 function methods:finish()
-	cqueues.cancel(self.conn:socket())
-
+	local ok, fd = pcall(self.conn.socket, self.conn)
+	if ok then
+		cqueues.cancel(fd)
+	end
 	return self.conn:finish()
 end
+
 function mt:__gc()
 	self:finish()
 end
