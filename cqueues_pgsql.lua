@@ -3,7 +3,7 @@ local cqueues = require "cqueues"
 
 local methods = {}
 local mt = {
-	__name = "cqueues-pgsql connection";
+	__name = "cqueues_pgsql connection";
 }
 
 -- Delegate to underlying pgsql object

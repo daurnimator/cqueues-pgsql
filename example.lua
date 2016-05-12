@@ -1,5 +1,5 @@
 local cqueues = require "cqueues"
-local pgsql = require "cqueues-pgsql"
+local pgsql = require "cqueues_pgsql"
 
 -- Simple function that prints out a result object
 local function pr(res)
