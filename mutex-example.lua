@@ -2,20 +2,6 @@ local cqueues = require "cqueues"
 local condition = require "cqueues.condition"
 local pgsql = require "cqueues-pgsql"
 
--- Simple function that prints out a result object
-local function pr(res)
-	print("STATUS: ", res:status())
-	for j=1, res:nfields() do
-		print(res:fname(j))
-	end
-	for i=1, res:ntuples() do	
-		for j=1, res:nfields() do
-			print(res:getvalue(i, j))
-		end
-	end
-end
-
-
 local conn = pgsql.connectdb()
 if conn:status() ~= pgsql.CONNECTION_OK then
 	error(conn:errorMessage(), nil)
