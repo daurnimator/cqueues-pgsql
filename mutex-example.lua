@@ -10,20 +10,21 @@ assert(conn:exec("LISTEN somechannel"):status() == pgsql.PGRES_COMMAND_OK)
 
 local loop = cqueues.new()
 local mutex do
-	local inuse = false
-	local cond = condition.new(true)
-	mutex = {}
+	mutex = {
+		cond = condition.new(true);
+		inuse = false;
+	}
 	function mutex:lock(timeout)
-		if inuse then
-			inuse = cond:wait(timeout)
+		if self.inuse then
+			self.inuse = self.cond:wait(timeout)
 		else
-			inuse = true
+			self.inuse = true
 		end
-		return inuse
+		return self.inuse
 	end
 	function mutex:unlock()
-		inuse = false
-		cond:signal(1)
+		self.inuse = false
+		self.cond:signal(1)
 	end
 end
 
