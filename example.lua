@@ -7,7 +7,7 @@ local function pr(res)
 	for j=1, res:nfields() do
 		print(res:fname(j))
 	end
-	for i=1, res:ntuples() do	
+	for i=1, res:ntuples() do
 		for j=1, res:nfields() do
 			print(res:getvalue(i, j))
 		end
@@ -24,7 +24,7 @@ do
 
 	local res = conn:exec("SELECT * FROM sometable")
 	if not res then error(conn:errorMessage(), nil) end
-	pr(res)	
+	pr(res)
 end
 
 -- But when inside a cqueues coroutine, it's non blocking!
@@ -35,19 +35,24 @@ loop:wrap(function()
 		error(conn:errorMessage(), nil)
 	end
 
-	local res = conn:exec("SELECT * FROM sometable")
-	if not res then error(conn:errorMessage(), nil) end
-	pr(res)
-	
-
-	local prepared = conn:prepare("sel", [[SELECT $1 AS "heh" FROM sometable]], "asd")
-	if prepared:status() ~= pgsql.PGRES_COMMAND_OK then
-		error(prepared:errorMessage(), nil)
+	do
+		local res = conn:exec("SELECT * FROM sometable")
+		if not res then error(conn:errorMessage(), nil) end
+		pr(res)
 	end
 
-	local res = conn:execPrepared("sel", "id")
-	if not res then error(conn:errorMessage(), nil) end
-	pr(res)
+	do
+		local prepared = conn:prepare("sel", [[SELECT $1 AS "heh" FROM sometable]], "asd")
+		if prepared:status() ~= pgsql.PGRES_COMMAND_OK then
+			error(prepared:errorMessage(), nil)
+		end
+	end
+
+	do
+		local res = conn:execPrepared("sel", "id")
+		if not res then error(conn:errorMessage(), nil) end
+		pr(res)
+	end
 end)
 assert(loop:loop())
 
