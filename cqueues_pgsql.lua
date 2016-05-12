@@ -79,7 +79,7 @@ end
 function methods:reset()
 	cqueues.cancel(self.conn:socket())
 
-	if self.conn:resetStart() == 0 then
+	if not self.conn:resetStart() then
 		return
 	end
 	while true do
