@@ -80,13 +80,13 @@ function methods:reset()
 		return
 	end
 	while true do
-		local status = conn:status()
+		local status = self.conn:status()
 		if status == pgsql.CONNECTION_OK then
 			break
 		elseif status == pgsql.CONNECTION_BAD then
 			break
 		end
-		if conn:resetPoll() ~= pgsql.PGRES_POLLING_OK then
+		if self.conn:resetPoll() ~= pgsql.PGRES_POLLING_OK then
 			break
 		end
 	end
