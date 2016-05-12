@@ -5,6 +5,7 @@ local methods = {}
 local mt = {
 	__name = "cqueues-pgsql connection";
 }
+
 -- Delegate to underlying pgsql object
 function mt.__index(t,k)
 	local v = methods[k]
@@ -55,6 +56,7 @@ function methods:connectPoll()
 		end
 	end
 end
+
 function methods:resetPoll()
 	while true do
 		local polling = self.conn:resetPoll()
@@ -73,6 +75,7 @@ function methods:resetPoll()
 		end
 	end
 end
+
 function methods:reset()
 	cqueues.cancel(self.conn:socket())
 
@@ -91,6 +94,7 @@ function methods:reset()
 		end
 	end
 end
+
 function methods:flush()
 	local t
 	while true do
@@ -108,6 +112,7 @@ function methods:flush()
 		end
 	end
 end
+
 function methods:sendQuery(...)
 	if self.conn:sendQuery(...) == 0 then
 		return 0
@@ -118,6 +123,7 @@ function methods:sendQuery(...)
 		return 0
 	end
 end
+
 function methods:sendQueryParams(...)
 	if self.conn:sendQueryParams(...) == 0 then
 		return 0
@@ -128,6 +134,7 @@ function methods:sendQueryParams(...)
 		return 0
 	end
 end
+
 function methods:sendPrepare(...)
 	if self.conn:sendPrepare(...) == 0 then
 		return 0
@@ -138,6 +145,7 @@ function methods:sendPrepare(...)
 		return 0
 	end
 end
+
 function methods:sendQueryPrepared(...)
 	if self.conn:sendQueryPrepared(...) == 0 then
 		return 0
@@ -148,6 +156,7 @@ function methods:sendQueryPrepared(...)
 		return 0
 	end
 end
+
 function methods:sendDescribePrepared(...)
 	if self.conn:sendDescribePrepared(...) == 0 then
 		return 0
@@ -158,6 +167,7 @@ function methods:sendDescribePrepared(...)
 		return 0
 	end
 end
+
 function methods:sendDescribePortal(...)
 	if self.conn:sendDescribePortal(...) == 0 then
 		return 0
@@ -168,6 +178,7 @@ function methods:sendDescribePortal(...)
 		return 0
 	end
 end
+
 function methods:getResult()
 	local t
 	while self.conn:isBusy() do
@@ -185,6 +196,7 @@ function methods:getResult()
 	end
 	return self.conn:getResult()
 end
+
 function methods:exec(...)
 	if self:sendQuery(...) == 0 then
 		return nil
@@ -200,6 +212,7 @@ function methods:exec(...)
 		end
 	end
 end
+
 function methods:execParams(...)
 	if self:sendQueryParams(...) == 0 then
 		return nil
@@ -210,6 +223,7 @@ function methods:execParams(...)
 	assert(self:getResult() == nil)
 	return res
 end
+
 function methods:prepare(...)
 	if self:sendPrepare(...) == 0 then
 		return nil
@@ -220,6 +234,7 @@ function methods:prepare(...)
 	assert(self:getResult() == nil)
 	return res
 end
+
 function methods:execPrepared(...)
 	if self:sendQueryPrepared(...) == 0 then
 		return nil
@@ -230,6 +245,7 @@ function methods:execPrepared(...)
 	assert(self:getResult() == nil)
 	return res
 end
+
 function methods:describePrepared(...)
 	if self:sendDescribePrepared(...) == 0 then
 		return nil
@@ -240,6 +256,7 @@ function methods:describePrepared(...)
 	assert(self:getResult() == nil)
 	return res
 end
+
 function methods:describePortal(...)
 	if self:sendDescribePortal(...) == 0 then
 		return nil
