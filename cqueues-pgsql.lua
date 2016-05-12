@@ -155,6 +155,16 @@ function methods:sendDescribePortal(...)
 	return self:flush() ~= nil
 end
 
+function methods:consumeInput()
+	-- Flush before consuming in case there is a pending outgoing data
+	-- If we don't call it, consumeInput will
+	-- but then if a socket buffer is full we'd fall into a busy-loop
+	if self:flush() == nil then
+		return nil
+	end
+	return self.conn:consumeInput()
+end
+
 function methods:getResult()
 	local t
 	while self.conn:isBusy() do
