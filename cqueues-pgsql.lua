@@ -257,7 +257,7 @@ local function wrap(conn)
 			conn = conn;
 		}, mt)
 end
-if _VERSION == "Lua 5.1" then
+if _VERSION == "Lua 5.1" then -- luacheck: push std lua51
 	-- Lua 5.1 does not respect __gc on tables
 	-- However it does have newproxy.
 	local old_wrap = wrap
@@ -270,7 +270,7 @@ if _VERSION == "Lua 5.1" then
 		self.gc_hook = gc_hook
 		return self
 	end
-end
+end -- luacheck: pop
 
 local function connectStart(...)
 	return wrap(pgsql.connectStart(...))
