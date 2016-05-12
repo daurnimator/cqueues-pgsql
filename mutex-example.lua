@@ -1,6 +1,6 @@
 local cqueues = require "cqueues"
 local condition = require "cqueues.condition"
-local pgsql = require "cqueues-pgsql"
+local pgsql = require "cqueues_pgsql"
 
 local conn = pgsql.connectdb()
 if conn:status() ~= pgsql.CONNECTION_OK then
