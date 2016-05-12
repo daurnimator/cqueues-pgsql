@@ -99,7 +99,7 @@ function methods:flush()
 	local t
 	while true do
 		local r = self.conn:flush()
-		if r == 1 then
+		if r then
 			if not t then
 				t = {
 					pollfd = self.conn:socket();
@@ -114,68 +114,68 @@ function methods:flush()
 end
 
 function methods:sendQuery(...)
-	if self.conn:sendQuery(...) == 0 then
-		return 0
+	if not self.conn:sendQuery(...) then
+		return false
 	end
-	if self:flush() == 0 then
-		return 1
-	else -- returned -1
-		return 0
+	if not self:flush() then
+		return true
+	else -- an error occured
+		return false
 	end
 end
 
 function methods:sendQueryParams(...)
-	if self.conn:sendQueryParams(...) == 0 then
-		return 0
+	if not self.conn:sendQueryParams(...) then
+		return false
 	end
-	if self:flush() == 0 then
-		return 1
-	else -- returned -1
-		return 0
+	if not self:flush() then
+		return true
+	else -- an error occured
+		return false
 	end
 end
 
 function methods:sendPrepare(...)
-	if self.conn:sendPrepare(...) == 0 then
-		return 0
+	if not self.conn:sendPrepare(...) then
+		return false
 	end
-	if self:flush() == 0 then
-		return 1
-	else -- returned -1
-		return 0
+	if not self:flush() then
+		return true
+	else -- an error occured
+		return false
 	end
 end
 
 function methods:sendQueryPrepared(...)
-	if self.conn:sendQueryPrepared(...) == 0 then
-		return 0
+	if not self.conn:sendQueryPrepared(...) then
+		return false
 	end
-	if self:flush() == 0 then
-		return 1
-	else -- returned -1
-		return 0
+	if not self:flush() then
+		return true
+	else -- an error occured
+		return false
 	end
 end
 
 function methods:sendDescribePrepared(...)
-	if self.conn:sendDescribePrepared(...) == 0 then
-		return 0
+	if not self.conn:sendDescribePrepared(...) then
+		return false
 	end
-	if self:flush() == 0 then
-		return 1
-	else -- returned -1
-		return 0
+	if not self:flush() then
+		return true
+	else -- an error occured
+		return false
 	end
 end
 
 function methods:sendDescribePortal(...)
-	if self.conn:sendDescribePortal(...) == 0 then
-		return 0
+	if not self.conn:sendDescribePortal(...) then
+		return false
 	end
-	if self:flush() == 0 then
-		return 1
-	else -- returned -1
-		return 0
+	if not self:flush() then
+		return true
+	else -- an error occured
+		return false
 	end
 end
 
@@ -198,7 +198,7 @@ function methods:getResult()
 end
 
 function methods:exec(...)
-	if self:sendQuery(...) == 0 then
+	if not self:sendQuery(...) then
 		return nil
 	end
 	-- return the last result
@@ -214,7 +214,7 @@ function methods:exec(...)
 end
 
 function methods:execParams(...)
-	if self:sendQueryParams(...) == 0 then
+	if not self:sendQueryParams(...) then
 		return nil
 	end
 	-- Can only have one result
@@ -225,7 +225,7 @@ function methods:execParams(...)
 end
 
 function methods:prepare(...)
-	if self:sendPrepare(...) == 0 then
+	if not self:sendPrepare(...) then
 		return nil
 	end
 	-- Can only have one result
@@ -236,7 +236,7 @@ function methods:prepare(...)
 end
 
 function methods:execPrepared(...)
-	if self:sendQueryPrepared(...) == 0 then
+	if not self:sendQueryPrepared(...) then
 		return nil
 	end
 	-- Can only have one result
@@ -247,7 +247,7 @@ function methods:execPrepared(...)
 end
 
 function methods:describePrepared(...)
-	if self:sendDescribePrepared(...) == 0 then
+	if not self:sendDescribePrepared(...) then
 		return nil
 	end
 	-- Can only have one result
@@ -258,7 +258,7 @@ function methods:describePrepared(...)
 end
 
 function methods:describePortal(...)
-	if self:sendDescribePortal(...) == 0 then
+	if not self:sendDescribePortal(...) then
 		return nil
 	end
 	-- Can only have one result
