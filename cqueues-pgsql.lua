@@ -117,66 +117,42 @@ function methods:sendQuery(...)
 	if not self.conn:sendQuery(...) then
 		return false
 	end
-	if not self:flush() then
-		return true
-	else -- an error occured
-		return false
-	end
+	return self:flush() ~= nil
 end
 
 function methods:sendQueryParams(...)
 	if not self.conn:sendQueryParams(...) then
 		return false
 	end
-	if not self:flush() then
-		return true
-	else -- an error occured
-		return false
-	end
+	return self:flush() ~= nil
 end
 
 function methods:sendPrepare(...)
 	if not self.conn:sendPrepare(...) then
 		return false
 	end
-	if not self:flush() then
-		return true
-	else -- an error occured
-		return false
-	end
+	return self:flush() ~= nil
 end
 
 function methods:sendQueryPrepared(...)
 	if not self.conn:sendQueryPrepared(...) then
 		return false
 	end
-	if not self:flush() then
-		return true
-	else -- an error occured
-		return false
-	end
+	return self:flush() ~= nil
 end
 
 function methods:sendDescribePrepared(...)
 	if not self.conn:sendDescribePrepared(...) then
 		return false
 	end
-	if not self:flush() then
-		return true
-	else -- an error occured
-		return false
-	end
+	return self:flush() ~= nil
 end
 
 function methods:sendDescribePortal(...)
 	if not self.conn:sendDescribePortal(...) then
 		return false
 	end
-	if not self:flush() then
-		return true
-	else -- an error occured
-		return false
-	end
+	return self:flush() ~= nil
 end
 
 function methods:getResult()
