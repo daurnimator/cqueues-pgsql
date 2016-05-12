@@ -166,19 +166,18 @@ function methods:consumeInput()
 end
 
 function methods:getResult()
-	local t
-	while self.conn:isBusy() do
-		if not t then
-			t = {
-				pollfd = self.conn:socket();
-				events = "r";
-			}
-		end
-		cqueues.poll(t)
-		if not self.conn:consumeInput() then
-			-- error
-			return nil
-		end
+	if self.conn:isBusy() then
+		local t = {
+			pollfd = self.conn:socket();
+			events = "r";
+		}
+		repeat
+			if not self:consumeInput() then
+				-- error
+				return nil
+			end
+			cqueues.poll(t)
+		until not self.conn:isBusy()
 	end
 	return self.conn:getResult()
 end
