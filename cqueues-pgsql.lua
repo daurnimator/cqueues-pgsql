@@ -298,6 +298,7 @@ local _M = {
 	connectdb = connectdb;
 	libVersion = pgsql.libVersion;
 	ping = pgsql.ping;
+	unescapeBytea = pgsql.unescapeBytea;
 	encryptPassword = pgsql.encryptPassword;
 	initOpenSSL = pgsql.initOpenSSL;
 }
