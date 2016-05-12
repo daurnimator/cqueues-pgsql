@@ -293,7 +293,7 @@ local function connectdb(...)
 end
 
 -- Get exports ready
-local _M = {
+local M = {
 	connectStart = connectStart;
 	connectdb = connectdb;
 	libVersion = pgsql.libVersion;
@@ -306,8 +306,8 @@ local _M = {
 -- Copy in constants
 for k, v in pairs(pgsql) do
 	if k == k:upper() and type(v) == "number" then
-		_M[k] = v
+		M[k] = v
 	end
 end
 
-return _M
+return M
