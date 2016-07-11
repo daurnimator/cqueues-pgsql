@@ -17,7 +17,7 @@ end
 
 -- Works like normal in a standard lua context:
 do
-	local conn = pgsql.connectdb()
+	local conn = pgsql.connectdb ""
 	if conn:status() ~= pgsql.CONNECTION_OK then
 		error(conn:errorMessage(), nil)
 	end
@@ -30,7 +30,7 @@ end
 -- But when inside a cqueues coroutine, it's non blocking!
 local loop = cqueues.new()
 loop:wrap(function()
-	local conn = pgsql.connectdb()
+	local conn = pgsql.connectdb ""
 	if conn:status() ~= pgsql.CONNECTION_OK then
 		error(conn:errorMessage(), nil)
 	end
