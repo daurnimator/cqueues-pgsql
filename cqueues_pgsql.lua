@@ -96,19 +96,26 @@ function methods:reset()
 end
 
 function methods:flush()
-	local t
+	local r, w
 	while true do
-		local r = self.conn:flush()
-		if r then
-			if not t then
-				t = {
-					pollfd = self.conn:socket();
-					events = "w";
-				}
+		local res = self.conn:flush()
+		if res ~= false then
+			return res
+		end
+		if not r then
+			r = {
+				pollfd = self.conn:socket();
+				events = "r";
+			}
+			w = {
+				pollfd = self.conn:socket();
+				events = "w";
+			}
+		end
+		if cqueues.poll(r, w) == r then
+			if not self.conn:consumeInput() then
+				return nil
 			end
-			cqueues.poll(t)
-		else
-			return r
 		end
 	end
 end
