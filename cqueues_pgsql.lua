@@ -37,20 +37,31 @@ function mt:__gc()
 	self:finish()
 end
 
+local function cancel(pollfd)
+	local cq = cqueues.running()
+	if cq then
+		cq:cancel(pollfd)
+	end
+end
+
 --- Override synchronous methods to yield via cqueues
 function methods:connectPoll()
 	while true do
 		local polling = self.conn:connectPoll()
 		if polling == pgsql.PGRES_POLLING_READING then
+			local pollfd = self.conn:socket()
 			cqueues.poll {
-				pollfd = self.conn:socket();
+				pollfd = pollfd;
 				events = "r";
 			}
+			cancel(pollfd)
 		elseif polling == pgsql.PGRES_POLLING_WRITING then
+			local pollfd = self.conn:socket()
 			cqueues.poll {
-				pollfd = self.conn:socket();
+				pollfd = pollfd;
 				events = "w";
 			}
+			cancel(pollfd)
 		else
 			return polling
 		end
@@ -61,15 +72,19 @@ function methods:resetPoll()
 	while true do
 		local polling = self.conn:resetPoll()
 		if polling == pgsql.PGRES_POLLING_READING then
+			local pollfd = self.conn:socket()
 			cqueues.poll {
-				pollfd = self.conn:socket();
+				pollfd = pollfd;
 				events = "r";
 			}
+			cancel(pollfd)
 		elseif polling == pgsql.PGRES_POLLING_WRITING then
+			local pollfd = self.conn:socket()
 			cqueues.poll {
-				pollfd = self.conn:socket();
+				pollfd = pollfd;
 				events = "w";
 			}
+			cancel(pollfd)
 		else
 			return polling
 		end
@@ -96,23 +111,26 @@ function methods:reset()
 end
 
 function methods:flush()
-	local r, w
+	local pollfd, r, w
 	while true do
 		local res = self.conn:flush()
 		if res ~= false then
 			return res
 		end
 		if not r then
+			pollfd = self.conn:socket();
 			r = {
-				pollfd = self.conn:socket();
+				pollfd = pollfd;
 				events = "r";
 			}
 			w = {
-				pollfd = self.conn:socket();
+				pollfd = pollfd;
 				events = "w";
 			}
 		end
-		if cqueues.poll(r, w) == r then
+		local z = cqueues.poll(r, w)
+		cancel(pollfd)
+		if z == r then
 			if not self.conn:consumeInput() then
 				return nil
 			end
@@ -171,8 +189,9 @@ function methods:getResult()
 			return nil
 		end
 
+		local pollfd = self.conn:socket()
 		local t = {
-			pollfd = self.conn:socket();
+			pollfd = pollfd;
 			events = "r";
 		}
 		while true do
@@ -184,6 +203,7 @@ function methods:getResult()
 				break
 			end
 			cqueues.poll(t)
+			cancel(pollfd)
 		end
 	end
 	return self.conn:getResult()
