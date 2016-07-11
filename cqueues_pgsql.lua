@@ -25,14 +25,6 @@ function mt.__index(t,k)
 	end
 end
 
-function methods:finish()
-	local ok, fd = pcall(self.conn.socket, self.conn)
-	if ok then
-		cqueues.cancel(fd)
-	end
-	return self.conn:finish()
-end
-
 function mt:__gc()
 	self:finish()
 end
@@ -92,8 +84,6 @@ function methods:resetPoll()
 end
 
 function methods:reset()
-	cqueues.cancel(self.conn:socket())
-
 	if not self.conn:resetStart() then
 		return
 	end
