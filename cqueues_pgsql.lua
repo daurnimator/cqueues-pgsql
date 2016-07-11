@@ -155,29 +155,29 @@ function methods:sendDescribePortal(...)
 	return self:flush() ~= nil
 end
 
-function methods:consumeInput()
-	-- Flush before consuming in case there is a pending outgoing data
-	-- If we don't call it, consumeInput will
-	-- but then if a socket buffer is full we'd fall into a busy-loop
-	if self:flush() == nil then
-		return nil
-	end
-	return self.conn:consumeInput()
-end
-
 function methods:getResult()
 	if self.conn:isBusy() then
+		-- Flush before consuming in case there is a pending outgoing data
+		-- If we don't call it, consumeInput will anyway
+		-- but then if a socket buffer is full we'd fall into a busy-loop
+		if self:flush() == nil then
+			return nil
+		end
+
 		local t = {
 			pollfd = self.conn:socket();
 			events = "r";
 		}
-		repeat
-			if not self:consumeInput() then
+		while true do
+			if not self.conn:consumeInput() then
 				-- error
 				return nil
 			end
+			if not self.conn:isBusy() then
+				break
+			end
 			cqueues.poll(t)
-		until not self.conn:isBusy()
+		end
 	end
 	return self.conn:getResult()
 end
