@@ -43,7 +43,7 @@ loop:wrap(function()
 
 	do
 		local prepared = conn:prepare("sel", [[SELECT $1 AS "heh" FROM sometable]], "asd")
-		if prepared:status() ~= pgsql.PGRES_COMMAND_OK then
+		if not prepared or prepared:status() ~= pgsql.PGRES_COMMAND_OK then
 			error(prepared:errorMessage(), nil)
 		end
 	end
