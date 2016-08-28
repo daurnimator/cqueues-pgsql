@@ -195,6 +195,14 @@ function methods:getResult()
 	return self.conn:getResult()
 end
 
+local in_progress = {
+	[pgsql.PGRES_COPY_OUT] = true;
+	[pgsql.PGRES_COPY_IN] = true;
+}
+if pgsql.PGRES_COPY_BOTH then
+	in_progress[pgsql.PGRES_COPY_BOTH] = true
+end
+
 function methods:exec(...)
 	if not self:sendQuery(...) then
 		return nil
@@ -205,6 +213,8 @@ function methods:exec(...)
 		local tmp = self:getResult()
 		if tmp == nil then
 			return res
+		elseif in_progress[tmp:status()] then
+			return tmp
 		else
 			res = tmp
 		end
