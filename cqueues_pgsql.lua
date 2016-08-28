@@ -25,10 +25,6 @@ function mt.__index(t,k)
 	end
 end
 
-function mt:__gc()
-	self:finish()
-end
-
 local function cancel(pollfd)
 	local cq = cqueues.running()
 	if cq then
@@ -276,20 +272,6 @@ local function wrap(conn)
 			conn = conn;
 		}, mt)
 end
-if _VERSION == "Lua 5.1" then -- luacheck: push std lua51
-	-- Lua 5.1 does not respect __gc on tables
-	-- However it does have newproxy.
-	local old_wrap = wrap
-	wrap = function(...)
-		local self = old_wrap(...)
-		local gc_hook = newproxy(true)
-		getmetatable(gc_hook).__gc = function()
-			self:finish()
-		end
-		self.gc_hook = gc_hook
-		return self
-	end
-end -- luacheck: pop
 
 local function connectStart(...)
 	return wrap(pgsql.connectStart(...))
