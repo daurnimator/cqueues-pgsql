@@ -1,4 +1,4 @@
-A wrapper around [luapgsql](https://github.com/mbalmer/luapgsql) that uses [cqueues](http://25thandclement.com/~william/projects/cqueues.html)
+A wrapper around [luapgsql](https://github.com/arcapos/luapgsql) that uses [cqueues](http://25thandclement.com/~william/projects/cqueues.html)
 
 When used within a cqueues event loop your postgres operations will be non-blocking!
 
