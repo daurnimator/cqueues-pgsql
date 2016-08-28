@@ -266,6 +266,59 @@ function methods:describePortal(...)
 	return res
 end
 
+function methods:putCopyData(...)
+	while true do
+		local r = self.conn:putCopyData(...)
+		if r ~= false then
+			return r
+		end
+		local pollfd = self.conn:socket()
+		cqueues.poll {
+			pollfd = pollfd;
+			events = "w";
+		}
+		cancel(pollfd)
+	end
+end
+
+function methods:putCopyEnd(...)
+	while true do
+		local r = self.conn:putCopyEnd(...)
+		if r == nil then
+			return nil
+		elseif r then
+			break
+		end
+		local pollfd = self.conn:socket()
+		cqueues.poll {
+			pollfd = pollfd;
+			events = "w";
+		}
+		cancel(pollfd)
+	end
+	-- In nonblocking mode, to be certain that the data has been sent,
+	-- you should next wait for write-ready and call PQflush
+	return self:flush()
+end
+
+function methods:getCopyData(...)
+	while true do
+		local r = self.conn:getCopyData(...)
+		if r ~= false then
+			return r
+		end
+		local pollfd = self.conn:socket()
+		cqueues.poll {
+			pollfd = pollfd;
+			events = "r";
+		}
+		cancel(pollfd)
+		if not self.conn:consumeInput() then
+			return nil
+		end
+	end
+end
+
 local function wrap(conn)
 	conn:setnonblocking(true) -- Don't care if it fails
 	return setmetatable({
