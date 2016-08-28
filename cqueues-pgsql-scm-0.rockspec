@@ -15,7 +15,7 @@ description = {
 dependencies = {
 	"lua >= 5.1";
 	"cqueues";
-	"luapgsql >= 1.2.3, <= 1.4.10";
+	"luapgsql >= 1.6.1";
 }
 build = {
 	type = "builtin";

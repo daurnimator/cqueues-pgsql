@@ -25,16 +25,15 @@ function mt.__index(t,k)
 	end
 end
 
-function methods:finish()
-	local ok, fd = pcall(self.conn.socket, self.conn)
-	if ok then
-		cqueues.cancel(fd)
-	end
-	return self.conn:finish()
-end
-
 function mt:__gc()
 	self:finish()
+end
+
+local function cancel(pollfd)
+	local cq = cqueues.running()
+	if cq then
+		cq:cancel(pollfd)
+	end
 end
 
 --- Override synchronous methods to yield via cqueues
@@ -42,15 +41,19 @@ function methods:connectPoll()
 	while true do
 		local polling = self.conn:connectPoll()
 		if polling == pgsql.PGRES_POLLING_READING then
+			local pollfd = self.conn:socket()
 			cqueues.poll {
-				pollfd = self.conn:socket();
+				pollfd = pollfd;
 				events = "r";
 			}
+			cancel(pollfd)
 		elseif polling == pgsql.PGRES_POLLING_WRITING then
+			local pollfd = self.conn:socket()
 			cqueues.poll {
-				pollfd = self.conn:socket();
+				pollfd = pollfd;
 				events = "w";
 			}
+			cancel(pollfd)
 		else
 			return polling
 		end
@@ -61,15 +64,19 @@ function methods:resetPoll()
 	while true do
 		local polling = self.conn:resetPoll()
 		if polling == pgsql.PGRES_POLLING_READING then
+			local pollfd = self.conn:socket()
 			cqueues.poll {
-				pollfd = self.conn:socket();
+				pollfd = pollfd;
 				events = "r";
 			}
+			cancel(pollfd)
 		elseif polling == pgsql.PGRES_POLLING_WRITING then
+			local pollfd = self.conn:socket()
 			cqueues.poll {
-				pollfd = self.conn:socket();
+				pollfd = pollfd;
 				events = "w";
 			}
+			cancel(pollfd)
 		else
 			return polling
 		end
@@ -77,9 +84,7 @@ function methods:resetPoll()
 end
 
 function methods:reset()
-	cqueues.cancel(self.conn:socket())
-
-	if self.conn:resetStart() == 0 then
+	if not self.conn:resetStart() then
 		return
 	end
 	while true do
@@ -96,109 +101,106 @@ function methods:reset()
 end
 
 function methods:flush()
-	local t
+	local pollfd, r, w
 	while true do
-		local r = self.conn:flush()
-		if r == 1 then
-			if not t then
-				t = {
-					pollfd = self.conn:socket();
-					events = "w";
-				}
+		local res = self.conn:flush()
+		if res ~= false then
+			return res
+		end
+		if not r then
+			pollfd = self.conn:socket();
+			r = {
+				pollfd = pollfd;
+				events = "r";
+			}
+			w = {
+				pollfd = pollfd;
+				events = "w";
+			}
+		end
+		local z = cqueues.poll(r, w)
+		cancel(pollfd)
+		if z == r then
+			if not self.conn:consumeInput() then
+				return nil
 			end
-			cqueues.poll(t)
-		else
-			return r
 		end
 	end
 end
 
 function methods:sendQuery(...)
-	if self.conn:sendQuery(...) == 0 then
-		return 0
+	if not self.conn:sendQuery(...) then
+		return false
 	end
-	if self:flush() == 0 then
-		return 1
-	else -- returned -1
-		return 0
-	end
+	return self:flush() ~= nil
 end
 
 function methods:sendQueryParams(...)
-	if self.conn:sendQueryParams(...) == 0 then
-		return 0
+	if not self.conn:sendQueryParams(...) then
+		return false
 	end
-	if self:flush() == 0 then
-		return 1
-	else -- returned -1
-		return 0
-	end
+	return self:flush() ~= nil
 end
 
 function methods:sendPrepare(...)
-	if self.conn:sendPrepare(...) == 0 then
-		return 0
+	if not self.conn:sendPrepare(...) then
+		return false
 	end
-	if self:flush() == 0 then
-		return 1
-	else -- returned -1
-		return 0
-	end
+	return self:flush() ~= nil
 end
 
 function methods:sendQueryPrepared(...)
-	if self.conn:sendQueryPrepared(...) == 0 then
-		return 0
+	if not self.conn:sendQueryPrepared(...) then
+		return false
 	end
-	if self:flush() == 0 then
-		return 1
-	else -- returned -1
-		return 0
-	end
+	return self:flush() ~= nil
 end
 
 function methods:sendDescribePrepared(...)
-	if self.conn:sendDescribePrepared(...) == 0 then
-		return 0
+	if not self.conn:sendDescribePrepared(...) then
+		return false
 	end
-	if self:flush() == 0 then
-		return 1
-	else -- returned -1
-		return 0
-	end
+	return self:flush() ~= nil
 end
 
 function methods:sendDescribePortal(...)
-	if self.conn:sendDescribePortal(...) == 0 then
-		return 0
+	if not self.conn:sendDescribePortal(...) then
+		return false
 	end
-	if self:flush() == 0 then
-		return 1
-	else -- returned -1
-		return 0
-	end
+	return self:flush() ~= nil
 end
 
 function methods:getResult()
-	local t
-	while self.conn:isBusy() do
-		if not t then
-			t = {
-				pollfd = self.conn:socket();
-				events = "r";
-			}
-		end
-		cqueues.poll(t)
-		if not self.conn:consumeInput() then
-			-- error
+	if self.conn:isBusy() then
+		-- Flush before consuming in case there is a pending outgoing data
+		-- If we don't call it, consumeInput will anyway
+		-- but then if a socket buffer is full we'd fall into a busy-loop
+		if self:flush() == nil then
 			return nil
+		end
+
+		local pollfd = self.conn:socket()
+		local t = {
+			pollfd = pollfd;
+			events = "r";
+		}
+		while true do
+			if not self.conn:consumeInput() then
+				-- error
+				return nil
+			end
+			if not self.conn:isBusy() then
+				break
+			end
+			cqueues.poll(t)
+			cancel(pollfd)
 		end
 	end
 	return self.conn:getResult()
 end
 
 function methods:exec(...)
-	if self:sendQuery(...) == 0 then
+	if not self:sendQuery(...) then
 		return nil
 	end
 	-- return the last result
@@ -214,7 +216,7 @@ function methods:exec(...)
 end
 
 function methods:execParams(...)
-	if self:sendQueryParams(...) == 0 then
+	if not self:sendQueryParams(...) then
 		return nil
 	end
 	-- Can only have one result
@@ -225,7 +227,7 @@ function methods:execParams(...)
 end
 
 function methods:prepare(...)
-	if self:sendPrepare(...) == 0 then
+	if not self:sendPrepare(...) then
 		return nil
 	end
 	-- Can only have one result
@@ -236,7 +238,7 @@ function methods:prepare(...)
 end
 
 function methods:execPrepared(...)
-	if self:sendQueryPrepared(...) == 0 then
+	if not self:sendQueryPrepared(...) then
 		return nil
 	end
 	-- Can only have one result
@@ -247,7 +249,7 @@ function methods:execPrepared(...)
 end
 
 function methods:describePrepared(...)
-	if self:sendDescribePrepared(...) == 0 then
+	if not self:sendDescribePrepared(...) then
 		return nil
 	end
 	-- Can only have one result
@@ -258,7 +260,7 @@ function methods:describePrepared(...)
 end
 
 function methods:describePortal(...)
-	if self:sendDescribePortal(...) == 0 then
+	if not self:sendDescribePortal(...) then
 		return nil
 	end
 	-- Can only have one result

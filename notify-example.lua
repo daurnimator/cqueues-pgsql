@@ -1,7 +1,7 @@
 local cqueues = require "cqueues"
 local pgsql = require "cqueues_pgsql"
 
-local conn = pgsql.connectdb()
+local conn = pgsql.connectdb ""
 if conn:status() ~= pgsql.CONNECTION_OK then
 	error(conn:errorMessage(), nil)
 end
@@ -22,7 +22,8 @@ loop:wrap(function()
 end)
 loop:wrap(function()
 	while true do
-		if conn:exec("NOTIFY somechannel, 'hi!'"):status() ~= pgsql.PGRES_COMMAND_OK then
+		local res = conn:exec("NOTIFY somechannel, 'hi!'")
+		if not res or res:status() ~= pgsql.PGRES_COMMAND_OK then
 			error(conn:errorMessage(), nil)
 		end
 		print("SENT NOTIFY")
