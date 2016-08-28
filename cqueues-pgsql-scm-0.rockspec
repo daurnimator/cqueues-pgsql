@@ -6,7 +6,7 @@ source = {
 description = {
 	summary = "A wrapper around luapgsql that uses cqueues";
 	detailed = [[
-		When used within a cqueues event loop; your postgres operations will be non-blocking!"
+		When used within a cqueues event loop your postgres operations will be non-blocking!
 		API is identical to luapgsql, please refer to documentation there.
 	]];
 	homepage = "https://github.com/daurnimator/cqueues-pgsql";
